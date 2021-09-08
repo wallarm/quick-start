@@ -20,7 +20,7 @@ usage() {
 	Supported parameters (all the parameters are optional):
 		-h
 			This help message.
-		-S <SITE_NAME>
+		-S <WALLARM_CLOUD>
 			The name of used Wallarm site: EU, RU or US1 (by default the script uses EU site).
 		-u <DEPLOY_USER>
 			The username to be used for the new node registration process.
@@ -415,8 +415,8 @@ test_proxy() {
 	curl -v -H "Host: $DOMAIN_NAME" "http://localhost/?id='or+1=1--a-<script>prompt(1)</script>" > /dev/null
 }
 
-# By default use the Wallarm EU site
-API_SITE=eu
+# By default use the Wallarm EU Cloud
+WALLARM_CLOUD=eu
 API_PORT=444
 API_SSL_ARG=""
 
@@ -451,7 +451,7 @@ do
 			;;
 		S)	
 			# API site name (EU, RU or US1)
-			API_SITE=`echo $OPTARG | tr '[:upper:]' '[:lower:]'`;
+			WALLARM_CLOUD=`echo $OPTARG | tr '[:upper:]' '[:lower:]'`;
 			;;
 		x)
 			# Skip checking the DOMAIN NAME and the ORIGIN SERVER
@@ -471,13 +471,13 @@ if [ ! -z "$API_USERNAME" -a -z "$API_PASSWORD" ]; then
 	exit 1
 fi
 
-if [ "$API_SITE" = "us1" ]; then
+if [ "$WALLARM_CLOUD" = "us1" ]; then
 	API_HOST=us1.api.wallarm.com
-elif [ "$API_SITE" = "eu" ]; then
+elif [ "$WALLARM_CLOUD" = "eu" ]; then
 	API_HOST=api.wallarm.com
-elif [ "$API_SITE" = "ru" ]; then
+elif [ "$WALLARM_CLOUD" = "ru" ]; then
 	API_HOST=api.wallarm.ru
-elif [ "$API_SITE" = "custom" ]; then
+elif [ "$WALLARM_CLOUD" = "custom" ]; then
 	if [ -z "$WALLARM_API_HOST" ]; then
 		log_message ERROR "For a custom cloud, you must set the WALLARM_API_HOST environment variable"
 	else
@@ -492,7 +492,7 @@ elif [ "$API_SITE" = "custom" ]; then
 		API_SSL_ARG="--no-ssl"
 	fi
 else
-	log_message ERROR "Unknown Wallarm site name \"$API_SITE\". Accepted Wallarm site names are EU, RU or US1. Aborting."
+	log_message ERROR "Unknown Wallarm site name \"$WALLARM_CLOUD\". Accepted Wallarm site names are EU, RU or US1. Aborting."
 	usage
 	exit 1
 fi
