@@ -1,6 +1,6 @@
 #!/bin/sh
 # 
-# The script can be used to quickly deploy and configure a Wallarm WAF node on a supported Linux OS.
+# The script can be used to quickly deploy and configure a Wallarm node on a supported Linux OS.
 #
 
 # The name of the script - used for tagging of syslog messages
@@ -17,29 +17,29 @@ log_message() {
 usage() {
 	echo "Usage: 
 
-	Supported parameters (all the parameters are optional):
+	Supported parameters (all parameters are optional):
 		-h
 			This help message.
 		-S <WALLARM_CLOUD>
-			The name of used Wallarm site: EU, RU or US1 (by default the script uses EU site).
+			The name of Wallarm Cloud being used: eu, ru or us1 (by default the script uses EU Cloud).
 		-u <DEPLOY_USER>
-			The username to be used for the new node registration process.
+			The email to the Deploy or Administrator user account in Wallarm Console.
 		-p <DEPLOY_PASSWORD>
-			The password to be used for the new node registration process.
+			The password to the Deploy or Administrator user account in Wallarm Console.
 		-n <NODE_MAME>
-			The name of the node as it will visible in the Wallarm console UI (by 
+			The name of the node as it will be visible in Wallarm Console (by 
 			default the script will use the host name).
 		-d <DOMAIN_NAME>
-			The WAF reverse proxy will be configured to handle traffic for the domain.
+			The Wallarm reverse proxy will be configured to handle traffic for this domain.
 		-o <ORIGIN_SERVER>
-			The WAF reverse proxy will be configured to send upstream requests to the
+			The Wallarm reverse proxy will be configured to send upstream requests to the
 			specified IP address or domain name.
 		-x
 			Skip checking the DOMAIN NAME and the ORIGIN SERVER."
 }
 
 check_if_root() {
-	log_message INFO "Checking whether the script runs as root..."
+	log_message INFO "Checking whether the script is run as root..."
 	if [ "$(id -u)" -ne 0 ]; then
 		log_message ERROR "This script must be executed with root permissions" 
 		exit 1
@@ -52,7 +52,7 @@ check_domain() {
 		log_message INFO "Checking '$DOMAIN_NAME' resolution..."
 		ping -c1 "$DOMAIN_NAME"
 		if [ "$?" -eq 2 ]; then
-			log_message ERROR "Failed to resolve '$DOMAIN_NAME'. Please specify an another domain name or use the '-x' option to skip this check." 
+			log_message ERROR "Failed to resolve '$DOMAIN_NAME'. Please specify another domain name or use the '-x' option to skip this check." 
 	  		exit 1
 		fi
 	fi
@@ -62,14 +62,14 @@ check_origin() {
 	if [ -z "$SKIP_CHECK" ] && [ -n "$ORIGIN_NAME" ]; then
 		log_message INFO "Checking connectivity to '$ORIGIN_NAME'..."
 		if ! curl "$ORIGIN_NAME"; then
-			log_message ERROR "Failed to check connectivity to '$ORIGIN_NAME'. Please specify an another origin name or use the '-x' option to skip this check." 
+			log_message ERROR "Failed to check connectivity to '$ORIGIN_NAME'. Please specify another origin name or use the '-x' option to skip this check." 
 	  		exit 1
 		fi
 	fi
 }
 
 disable_selinux() {
-        log_message INFO "Checking whether SELinux is installed (and disabling it if it installed)..."
+        log_message INFO "Checking whether SELinux is installed (and disabling it if it is installed)..."
 	SELINUXENABLED=$(which selinuxenabled)
 	SETENFORCE=$(which setenforce)
         if [ -z "$SELINUXENABLED" ]; then
@@ -78,7 +78,7 @@ disable_selinux() {
         fi
 
         if [ -z "$SETENFORCE" ]; then
-                log_message WARNING "Cannot find 'setenforce' tool - will not try to disabled SELinux..."
+                log_message WARNING "Cannot find 'setenforce' tool - will not try to disable SELinux..."
                 return
         fi
 
@@ -89,7 +89,7 @@ disable_selinux() {
         if [ -f "$SELINUX_CONF" ]; then
                 log_message INFO "Updating file $SELINUX_CONF to permanently disable SELinux..."
                 if ! sed -i 's/enforcing/disabled/g' $SELINUX_CONF; then
-			log_message CRTICAL "Failed to update file $SELINUX_CONF and disabled SELinux - aborting"
+			log_message CRTICAL "Failed to update file $SELINUX_CONF and disable SELinux - aborting"
 			exit 1
 		fi
 		
@@ -119,7 +119,7 @@ get_distro() {
 			# osrelease="$( rpm -qa \centos-release | cut -d"-" -f3 )"
 			basearch=$(rpm -q --qf "%{arch}" -f /etc/$distro)
 		    else
-			log_message ERROR "It looks like Wallarm does not support your Centos OS. Detected OS details: osrelease = \"$osrelease\""
+			log_message ERROR "It looks like Wallarm does not support your CentOS OS. Detected OS details: osrelease = \"$osrelease\""
 			exit 1
 		    fi
 		elif [ "$osrelease" = 10 ]; then
@@ -154,20 +154,20 @@ do_install() {
 
 	case $lsb_dist in
 		debian|ubuntu)
-			log_message INFO "Configuring official Nginx repository key..."
+			log_message INFO "Configuring official NGINX repository key..."
 			apt-get update && apt-get install wget apt-transport-https dirmngr -y
 			KEY_FILE=nginx_signing.key
 			wget -O "$KEY_FILE" "https://nginx.org/keys/$KEY_FILE"
 			if [ ! -s "$KEY_FILE" ]; then
-				log_message CRITICAL "Failed to download file $KEY_FILE - aborting..."
+				log_message CRITICAL "Failed to download the file $KEY_FILE - aborting..."
 				exit 1
 			fi
 			if ! apt-key add "$KEY_FILE"; then
-				log_message CRITICAL "apt-key failed to add file $KEY_FILE - aborting..."
+				log_message CRITICAL "apt-key failed to add the file $KEY_FILE - aborting..."
 				exit 1
 			fi
 
-			log_message INFO "Configuring official Nginx repository..."
+			log_message INFO "Configuring official NGINX repository..."
 			sh -c "echo 'deb https://nginx.org/packages/$lsb_dist/ $pretty_name nginx'\
 				> /etc/apt/sources.list.d/nginx.list"
 			sh -c "echo 'deb-src https://nginx.org/packages/$lsb_dist/ $pretty_name nginx'\
@@ -176,7 +176,7 @@ do_install() {
 			log_message INFO "Removing nginx-common package..." 
 			apt-get remove nginx-common
 
-			log_message INFO "Installing official Nginx package..."
+			log_message INFO "Installing official NGINX package..."
 			apt-get update
 			if ! apt-get install -y nginx; then
 				log_message CRITICAL "Failed to install package nginx - aborting"
@@ -194,13 +194,13 @@ do_install() {
 
 			log_message INFO "Installing Wallarm packages..."
 			if ! apt-get install -y --no-install-recommends wallarm-node nginx-module-wallarm; then
-				log_message CRITICAL "Failed to install Wallarm WAF node packages - aborting."
+				log_message CRITICAL "Failed to install Wallarm node packages - aborting."
 				exit 1
 			fi
 
 			;;
 		centos)
-			log_message INFO "Configuring official Nginx repository..."
+			log_message INFO "Configuring official NGINX repository..."
 			echo "[nginx]" > /etc/yum.repos.d/nginx.repo
 			echo "name=nginx repo" >> /etc/yum.repos.d/nginx.repo
 			echo "baseurl=https://nginx.org/packages/centos/$osrelease/$basearch/" >> /etc/yum.repos.d/nginx.repo
@@ -219,7 +219,7 @@ do_install() {
 					;;					
 			esac
 
-			log_message INFO "Installing official Nginx packages..."
+			log_message INFO "Installing official NGINX packages..."
 			yum update -y
 			if ! rpm --quiet -q nginx; then
 				if ! yum install nginx -y; then
@@ -256,7 +256,7 @@ do_install() {
 			yum update -y
 			if ! rpm --quiet -q wallarm-node; then
 				if ! yum install -y wallarm-node nginx-module-wallarm; then
-					log_message CRITICAL "Failed to install Wallarm WAF node packages - aborting."
+					log_message CRITICAL "Failed to install Wallarm node packages - aborting."
 					exit 1
 				fi
 			fi
@@ -270,19 +270,19 @@ do_install() {
 	if grep -q ngx_http_wallarm_module.so $NGINX_CONF; then
 		log_message INFO "It looks like the file is already configured to load the module."
 	else
-		log_message INFO "Updating $NGINX_CONF to load Wallarm Nginx module..."
+		log_message INFO "Updating $NGINX_CONF to load Wallarm NGINX module..."
 		sed -i '/worker_processes.*/a load_module modules/ngx_http_wallarm_module.so;' /etc/nginx/nginx.conf
 	fi
 
 	CONF_DIR=/etc/nginx/conf.d/
 	if [ -f $CONF_DIR/wallarm.conf -o -f $CONF_DIR/wallarm-status.conf ]; then
-		log_message INFO "It looks like default Wallarm configuration files alredy present in $CONF_DIR directory."
+		log_message INFO "It looks like default Wallarm configuration files already presented in the $CONF_DIR directory."
 	else
 		log_message INFO "Copying default Wallarm configuration files to $CONF_DIR directory..."
 		cp /usr/share/doc/nginx-module-wallarm/examples/*.conf $CONF_DIR
 	fi
 
-	log_message INFO "Enabling Nginx to launch automatically during the server startup sequence..."
+	log_message INFO "Enabling NGINX to launch automatically during the server startup sequence..."
 	systemctl enable nginx
 }
 
@@ -290,7 +290,7 @@ do_install() {
 # Add the node the the cloud
 #
 add_node() {
-	log_message INFO "Working on connecting the node to the Wallarm cloud..."
+	log_message INFO "Working on connecting the node to the Wallarm Cloud..."
 
 	NODE_CONF=/etc/wallarm/node.yaml
 
@@ -301,11 +301,11 @@ add_node() {
 
 	ADDNODE_SCRIPT=/usr/share/wallarm-common/addnode
 	if [ ! -x $ADDNODE_SCRIPT ]; then
-		log_message ERROR "Expected script $ADDNODE_SCRIPT is not present - something is wrong with Wallarm packages - aborting."
+		log_message ERROR "Expected script $ADDNODE_SCRIPT is not presented - something is wrong with Wallarm packages - aborting."
        		exit 1
 	fi
 
-	log_message INFO "Running $ADDNODE_SCRIPT script to add the new to the Wallarm cloud (API endpoint $API_HOST)..."
+	log_message INFO "Running $ADDNODE_SCRIPT script to add the new node to the Wallarm Cloud (API endpoint $API_HOST)..."
 	if ! $ADDNODE_SCRIPT --force -H "$API_HOST" -P "$API_PORT" "$API_SSL_ARG" --username "$API_USERNAME" --password "$API_PASSWORD" --name "$MY_NODE_NAME"; then
 		log_message CRITICAL "Failed to register the node in Wallarm Cloud - aborting..."
 		exit 1
@@ -317,10 +317,10 @@ add_node() {
 }
 
 #
-# Configure the Nginx to handle the specified domain in reverse proxy mode
+# Configure the NGINX to handle the specified domain in reverse proxy mode
 #
 configure_proxy() {
-	log_message INFO "Checking whether we need to configure the Nginx proxy..."
+	log_message INFO "Checking whether we need to configure the NGINX proxy..."
 	CONF_FILE=/etc/nginx/conf.d/wallarm-proxy.conf	
 
 	if [ -z "$DOMAIN_NAME" ]; then
@@ -333,11 +333,11 @@ configure_proxy() {
 		ORIGIN_NAME=$DOMAIN_NAME
 	fi
 
-	log_message INFO "Creating Nginx configuration file $CONF_FILE with settings for domain $DOMAIN_NAME and origin address $ORIGIN_NAME..."
+	log_message INFO "Creating NGINX configuration file $CONF_FILE with settings for domain $DOMAIN_NAME and origin address $ORIGIN_NAME..."
 
 cat > $CONF_FILE << EOF
 
-# Set global Wallarm WAF mode to "block"
+# Set global Wallarm mode to "block"
 wallarm_mode block;
 
 server {
@@ -383,16 +383,16 @@ EOF
 	fi
 
 
-	log_message INFO "Using 'nginx -t' command verifying that the Nginx configuration is correct..."
+	log_message INFO "Using 'nginx -t' command verifying that the NGINX configuration is correct..."
 	if ! nginx -t; then
-		log_message ERROR "It looks like Nginx doesn't like the new configuration - aborting."
+		log_message ERROR "It looks like NGINX doesn't like the new configuration - aborting."
 		exit 1
 	fi
 
-        log_message INFO "Starting the Nginx service (just in case if it is not running)..."
+        log_message INFO "Starting the NGINX service (just in case if it is not running)..."
         service nginx start
 
-	log_message INFO "Reloading Nginx configuration..."
+	log_message INFO "Reloading NGINX configuration..."
 	service nginx reload
 
 }
@@ -401,7 +401,7 @@ EOF
 # Send a few test requests
 #
 test_proxy() {
-	log_message INFO "Sending a request to Wallarm WAF status page http://127.0.0.8/wallarm-status..."
+	log_message INFO "Sending a request to Wallarm status page http://127.0.0.8/wallarm-status..."
 	curl http://127.0.0.8/wallarm-status
 
 	if [ -z "$DOMAIN_NAME" ]; then
@@ -430,11 +430,11 @@ do
 			exit 1
 			;;
 		u)
-			# Wallarm username for WAF node registration
+			# Wallarm username for the node registration
 			API_USERNAME=$OPTARG;
 			;;
 		p)
-			# Wallarm password for WAF node registration
+			# Wallarm password for the node registration
 			API_PASSWORD=$OPTARG;
 			;;
 		n)
@@ -450,7 +450,7 @@ do
 			ORIGIN_NAME=$OPTARG;
 			;;
 		S)	
-			# API site name (EU, RU or US1)
+			# Wallarm Cloud being used (eu, ru or us1)
 			WALLARM_CLOUD=`echo $OPTARG | tr '[:upper:]' '[:lower:]'`;
 			;;
 		x)
@@ -492,7 +492,7 @@ elif [ "$WALLARM_CLOUD" = "custom" ]; then
 		API_SSL_ARG="--no-ssl"
 	fi
 else
-	log_message ERROR "Unknown Wallarm site name \"$WALLARM_CLOUD\". Accepted Wallarm site names are EU, RU or US1. Aborting."
+	log_message ERROR "Unknown Wallarm Cloud name \"$WALLARM_CLOUD\". Accepted Wallarm Cloud names are eu, ru or us1. Aborting."
 	usage
 	exit 1
 fi
@@ -513,4 +513,4 @@ configure_proxy
 
 test_proxy
 
-log_message INFO "We've completed the Wallarm WAF node deployment process."
+log_message INFO "We've completed the Wallarm node deployment process."
