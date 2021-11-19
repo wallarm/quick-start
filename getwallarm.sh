@@ -21,7 +21,7 @@ usage() {
 		-h
 			This help message.
 		-S <WALLARM_CLOUD>
-			The name of Wallarm Cloud being used: eu, ru or us1 (by default the script uses EU Cloud).
+			The name of Wallarm Cloud being used: eu, ru, us1 or custom (by default the script uses EU Cloud).
 		-u <DEPLOY_USER>
 			The email to the Deploy or Administrator user account in Wallarm Console.
 		-p <DEPLOY_PASSWORD>
@@ -480,6 +480,7 @@ elif [ "$WALLARM_CLOUD" = "ru" ]; then
 elif [ "$WALLARM_CLOUD" = "custom" ]; then
 	if [ -z "$WALLARM_API_HOST" ]; then
 		log_message ERROR "For a custom cloud, you must set the WALLARM_API_HOST environment variable"
+		exit 1
 	else
 		API_HOST="$WALLARM_API_HOST"
 	fi
