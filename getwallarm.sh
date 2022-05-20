@@ -124,6 +124,8 @@ get_distro() {
 		    fi
 		elif [ "$osrelease" = 10 ]; then
 			pretty_name="buster"
+		elif [ "$osrelease" = 11 ]; then
+			pretty_name="bullseye"
 		elif [ "$osrelease" = 18.04 ]; then
 			pretty_name="bionic"
 		elif [ "$osrelease" = 20.04 ]; then
