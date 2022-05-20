@@ -22,10 +22,8 @@ usage() {
 			This help message.
 		-S <WALLARM_CLOUD>
 			The name of Wallarm Cloud being used: eu, ru, us1 or custom (by default the script uses EU Cloud).
-		-u <DEPLOY_USER>
-			The email to the Deploy or Administrator user account in Wallarm Console.
-		-p <DEPLOY_PASSWORD>
-			The password to the Deploy or Administrator user account in Wallarm Console.
+		-t <DEPLOY_TOKEN>
+			The Wallarm node token copied from Wallarm Console.
 		-n <NODE_MAME>
 			The name of the node as it will be visible in Wallarm Console (by 
 			default the script will use the host name).
@@ -190,7 +188,7 @@ do_install() {
 			
 			log_message INFO "Configuring Wallarm repository..."
 			sh -c "echo 'deb http://repo.wallarm.com/$lsb_dist/wallarm-node\
-				$pretty_name/3.6/'\
+				$pretty_name/4.0/'\
 				>/etc/apt/sources.list.d/wallarm.list"
 			apt-get update
 
@@ -241,7 +239,7 @@ do_install() {
 					fi
 					yum-config-manager  --save --setopt=epel.exclude=nginx\*;
 					if ! rpm --quiet -q wallarm-node-repo; then
-						rpm -i https://repo.wallarm.com/centos/wallarm-node/7/3.6/x86_64/Packages/wallarm-node-repo-1-6.el7.noarch.rpm
+						rpm -i https://repo.wallarm.com/centos/wallarm-node/7/4.0/x86_64/Packages/wallarm-node-repo-1-6.el7.noarch.rpm
 					fi
 					;;
 				8)
@@ -249,7 +247,7 @@ do_install() {
 						yum install -y epel-release
 					fi
 					if ! rpm --quiet -q wallarm-node-repo; then
-						rpm -i https://repo.wallarm.com/centos/wallarm-node/8/3.6/x86_64/Packages/wallarm-node-repo-1-6.el8.noarch.rpm
+						rpm -i https://repo.wallarm.com/centos/wallarm-node/8/4.0/x86_64/Packages/wallarm-node-repo-1-6.el8.noarch.rpm
 					fi
 					;;					
 			esac
@@ -296,19 +294,14 @@ add_node() {
 
 	NODE_CONF=/etc/wallarm/node.yaml
 
-	if [ -z "$API_USERNAME" ]; then
-		log_message INFO "Wallarm API credentials are specified as -u and -p parameters of the script - skipping the node provisioning step."
-		return
-	fi
-
-	ADDNODE_SCRIPT=/usr/share/wallarm-common/addnode
+	ADDNODE_SCRIPT=/usr/share/wallarm-common/register-node
 	if [ ! -x $ADDNODE_SCRIPT ]; then
 		log_message ERROR "Expected script $ADDNODE_SCRIPT is not presented - something is wrong with Wallarm packages - aborting."
        		exit 1
 	fi
 
 	log_message INFO "Running $ADDNODE_SCRIPT script to add the new node to the Wallarm Cloud (API endpoint $API_HOST)..."
-	if ! $ADDNODE_SCRIPT --force -H "$API_HOST" -P "$API_PORT" "$API_SSL_ARG" --username "$API_USERNAME" --password "$API_PASSWORD" --name "$MY_NODE_NAME"; then
+	if ! $ADDNODE_SCRIPT --force -H "$API_HOST" -P "$API_PORT" "$API_SSL_ARG" --token "$API_TOKEN" --name "$MY_NODE_NAME"; then
 		log_message CRITICAL "Failed to register the node in Wallarm Cloud - aborting..."
 		exit 1
 	fi
@@ -424,20 +417,16 @@ API_SSL_ARG=""
 
 MY_NODE_NAME=`hostname`
 
-while getopts :hu:p:d:o:n:S:x option
+while getopts :ht:d:o:n:S:x option
 do
 	case "$option" in
 		h)
 			usage;
 			exit 1
 			;;
-		u)
-			# Wallarm username for the node registration
-			API_USERNAME=$OPTARG;
-			;;
-		p)
-			# Wallarm password for the node registration
-			API_PASSWORD=$OPTARG;
+		t)
+			# Wallarm token for the node registration
+			API_TOKEN=$OPTARG;
 			;;
 		n)
 			# The name of the node
@@ -467,8 +456,8 @@ do
 	esac
 done
 
-if [ ! -z "$API_USERNAME" -a -z "$API_PASSWORD" ]; then
-	log_message ERROR "Please specify both username and password parameters."
+if [ ! -z "$API_TOKEN" ]; then
+	log_message ERROR "Please specify token (DEPLOY_TOKEN) parameter."
 	usage
 	exit 1
 fi
