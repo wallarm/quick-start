@@ -412,7 +412,7 @@ test_proxy() {
 
 # By default use the Wallarm EU Cloud
 WALLARM_CLOUD=eu
-API_PORT=444
+API_PORT=443
 API_SSL_ARG=""
 
 MY_NODE_NAME=`hostname`
@@ -456,7 +456,7 @@ do
 	esac
 done
 
-if [ ! -z "$API_TOKEN" ]; then
+if [ -z "$API_TOKEN" ]; then
 	log_message ERROR "Please specify token (DEPLOY_TOKEN) parameter."
 	usage
 	exit 1
