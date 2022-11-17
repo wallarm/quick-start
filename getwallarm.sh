@@ -127,7 +127,9 @@ get_distro() {
 		elif [ "$osrelease" = 18.04 ]; then
 			pretty_name="bionic"
 		elif [ "$osrelease" = 20.04 ]; then
-			pretty_name="focal"			
+			pretty_name="focal"
+		elif [ "$osrelease" = 22.04 ]; then
+			pretty_name="jammy"
 		else
 			log_message ERROR "It looks like Wallarm does not support your OS. Detected OS details: osrelease = \"$osrelease\""
 			exit 1
@@ -188,7 +190,7 @@ do_install() {
 			
 			log_message INFO "Configuring Wallarm repository..."
 			sh -c "echo 'deb http://repo.wallarm.com/$lsb_dist/wallarm-node\
-				$pretty_name/4.2/'\
+				$pretty_name/4.4/'\
 				>/etc/apt/sources.list.d/wallarm.list"
 			apt-get update
 
@@ -239,7 +241,7 @@ do_install() {
 					fi
 					yum-config-manager  --save --setopt=epel.exclude=nginx\*;
 					if ! rpm --quiet -q wallarm-node-repo; then
-						rpm -i https://repo.wallarm.com/centos/wallarm-node/7/4.2/x86_64/wallarm-node-repo-4.2-0.el7.noarch.rpm
+						rpm -i https://repo.wallarm.com/centos/wallarm-node/7/4.4/x86_64/wallarm-node-repo-4.4-0.el7.noarch.rpm
 					fi
 					;;
 				8)
@@ -247,7 +249,7 @@ do_install() {
 						yum install -y epel-release
 					fi
 					if ! rpm --quiet -q wallarm-node-repo; then
-						rpm -i https://repo.wallarm.com/centos/wallarm-node/8/4.2/x86_64/wallarm-node-repo-4.2-0.el8.noarch.rpm
+						rpm -i https://repo.wallarm.com/centos/wallarm-node/8/4.4/x86_64/wallarm-node-repo-4.4-0.el8.noarch.rpm
 					fi
 					;;					
 			esac
@@ -407,7 +409,7 @@ test_proxy() {
 	curl -v -H "Host: $DOMAIN_NAME" http://localhost/ > /dev/null
 
 	log_message INFO "Sending a malicious HTTP request to the localhost for domain $DOMAIN_NAME (the response code should be 403)..."
-	curl -v -H "Host: $DOMAIN_NAME" "http://localhost/?id='or+1=1--a-<script>prompt(1)</script>" > /dev/null
+	curl -v -H "Host: $DOMAIN_NAME" "http://localhost/etc/passwd" > /dev/null
 }
 
 # By default use the Wallarm EU Cloud
