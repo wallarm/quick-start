@@ -59,13 +59,13 @@ The Shell script **getwallarm.sh** used for Wallarm quick start performs the fol
     If the curl command is available:
     
     ```
-    curl -o getwallarm.sh https://raw.githubusercontent.com/wallarm/quick-start/stable/4.4/getwallarm.sh
+    curl -o getwallarm.sh https://raw.githubusercontent.com/wallarm/quick-start/stable/4.6/getwallarm.sh
     ```
     
     If the wget command is available:
     
     ```
-    wget -O getwallarm.sh https://raw.githubusercontent.com/wallarm/quick-start/stable/4.4/getwallarm.sh
+    wget -O getwallarm.sh https://raw.githubusercontent.com/wallarm/quick-start/stable/4.6/getwallarm.sh
     ```
 1. Run the script passing the proper parameters:
 
