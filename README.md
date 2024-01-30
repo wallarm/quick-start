@@ -1,4 +1,6 @@
-# Quick start with Wallarm using the Shell script
+# [OUTDATED] Quick start with Wallarm using the Shell script
+
+> [! WARNING] > This quickstart method is outdated. For the latest node installation, use the all-in-one installer instead https://docs.wallarm.com/installation/nginx/all-in-one/. >
 
 This repository contains the Shell script that automates the Wallarm NGINX-based node deployment steps. The script has to be run on a server with one of the following supported Linux‑based operating system (OS):
 
